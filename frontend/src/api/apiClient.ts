@@ -61,6 +61,10 @@ export const apiClient = {
     return `${API_BASE_URL}/export-text?workflowId=${workflowId}`;
   },
 
+  exportPdfUrl: (workflowId: string) => {
+    return `${API_BASE_URL}/export-pdf?workflowId=${workflowId}`;
+  },
+
   resetWorkflow: async (workflowId: string) => {
     const response = await axios.delete(`${API_BASE_URL}/reset/${workflowId}`);
     return response.data;

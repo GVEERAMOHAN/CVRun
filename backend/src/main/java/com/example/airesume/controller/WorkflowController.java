@@ -30,6 +30,7 @@ public class WorkflowController {
     private final SuggestionRankingService rankingService;
     private final ResumeGenerationService generationService;
     private final TextExportService exportService;
+    private final PdfExportService pdfExportService;
     private final WorkflowCache cache;
 
     public WorkflowController(
@@ -39,6 +40,7 @@ public class WorkflowController {
             SuggestionRankingService rankingService,
             ResumeGenerationService generationService,
             TextExportService exportService,
+            PdfExportService pdfExportService,
             WorkflowCache cache) {
         this.parsingService = parsingService;
         this.mergeService = mergeService;
@@ -46,6 +48,7 @@ public class WorkflowController {
         this.rankingService = rankingService;
         this.generationService = generationService;
         this.exportService = exportService;
+        this.pdfExportService = pdfExportService;
         this.cache = cache;
     }
 
@@ -191,6 +194,24 @@ public class WorkflowController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.TEXT_PLAIN);
         headers.setContentDispositionFormData("attachment", "tailored_resume.txt");
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+    }
+
+    // 8b. Export PDF
+    @GetMapping("/export-pdf")
+    public ResponseEntity<byte[]> exportPdf(@RequestParam("workflowId") String workflowId) {
+        log.info("Request to export PDF for workflow: {}", workflowId);
+        Workflow workflow = cache.get(workflowId);
+        
+        byte[] bytes = pdfExportService.exportToPdf(workflow);
+        workflow.setStatus(WorkflowStatus.EXPORTED);
+        cache.put(workflowId, workflow);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "tailored_resume.pdf");
         headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 
         return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
