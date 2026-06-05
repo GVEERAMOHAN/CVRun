@@ -322,29 +322,76 @@ export const WorkflowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .filter((s) => s.section === 'skills' && s.approved)
         .map((s) => s.title);
 
-      // Projects
-      const approvedProjIds = suggestions
-        .filter((s) => s.section === 'projects' && s.approved)
-        .map((s) => s.originalItemId);
-      approved.projects = mergedProfile.projects.filter((p) => approvedProjIds.includes(p.id));
+      // Projects: Keep ALL projects from profile/resume. Use suggestion details if approved (preserving edits), else original
+      approved.projects = mergedProfile.projects.map((p) => {
+        const sug = suggestions.find((s) => s.section === 'projects' && s.originalItemId === p.id);
+        if (sug && sug.approved) {
+          return {
+            ...p,
+            title: sug.title,
+            description: sug.description || p.description,
+            bullets: sug.bullets,
+            techStack: sug.techStack && sug.techStack.length > 0 ? sug.techStack : p.techStack,
+          };
+        }
+        return p;
+      });
 
-      // Experience
-      const approvedExpIds = suggestions
-        .filter((s) => s.section === 'experience' && s.approved)
-        .map((s) => s.originalItemId);
-      approved.experience = mergedProfile.experience.filter((e) => approvedExpIds.includes(e.id));
+      // Experience: Use suggestion details if approved (preserving edits), otherwise filter out
+      approved.experience = mergedProfile.experience
+        .filter((e) => {
+          const sug = suggestions.find((s) => s.section === 'experience' && s.originalItemId === e.id);
+          return sug ? sug.approved : false;
+        })
+        .map((e) => {
+          const sug = suggestions.find((s) => s.section === 'experience' && s.originalItemId === e.id);
+          if (sug) {
+            return {
+              ...e,
+              role: sug.title,
+              company: sug.subtitle || e.company,
+              bullets: sug.bullets,
+              techStack: sug.techStack && sug.techStack.length > 0 ? sug.techStack : e.techStack,
+            };
+          }
+          return e;
+        });
 
-      // Achievements
-      const approvedAchIds = suggestions
-        .filter((s) => s.section === 'achievements' && s.approved)
-        .map((s) => s.originalItemId);
-      approved.achievements = mergedProfile.achievements.filter((a) => approvedAchIds.includes(a.id));
+      // Achievements: Use suggestion details if approved (preserving edits), otherwise filter out
+      approved.achievements = mergedProfile.achievements
+        .filter((a) => {
+          const sug = suggestions.find((s) => s.section === 'achievements' && s.originalItemId === a.id);
+          return sug ? sug.approved : false;
+        })
+        .map((a) => {
+          const sug = suggestions.find((s) => s.section === 'achievements' && s.originalItemId === a.id);
+          if (sug) {
+            return {
+              ...a,
+              title: sug.title,
+              description: sug.description || a.description,
+            };
+          }
+          return a;
+        });
 
-      // Certifications
-      const approvedCertIds = suggestions
-        .filter((s) => s.section === 'certifications' && s.approved)
-        .map((s) => s.originalItemId);
-      approved.certifications = mergedProfile.certifications.filter((c) => approvedCertIds.includes(c.id));
+      // Certifications: Use suggestion details if approved (preserving edits), otherwise filter out
+      approved.certifications = mergedProfile.certifications
+        .filter((c) => {
+          const sug = suggestions.find((s) => s.section === 'certifications' && s.originalItemId === c.id);
+          return sug ? sug.approved : false;
+        })
+        .map((c) => {
+          const sug = suggestions.find((s) => s.section === 'certifications' && s.originalItemId === c.id);
+          if (sug) {
+            return {
+              ...c,
+              name: sug.title,
+              issuingOrganization: sug.subtitle || c.issuingOrganization,
+            };
+          }
+          return c;
+        });
 
       // Links & Education - keep all by default as they represent standard profile info
       approved.education = mergedProfile.education;
